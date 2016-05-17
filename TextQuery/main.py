@@ -8,8 +8,6 @@ DATE   : 2016-05-15 12:20
 """
 
 import sys
-import os
-import profile
 
 import querytable
 
@@ -24,13 +22,12 @@ def split_sentence(document):
     :return: list of string
     """
     check_string(document)
-    sentences = []
     i = 0
     j = 0
     length = len(document)
     while j != length:
         if document[i] not in SENTENCE_ENDING and document[j] in SENTENCE_ENDING:
-            sentences.append(document[i:j])
+            yield document[i:j]
             i = j
             j += 1
         elif document[i] in SENTENCE_ENDING:
@@ -38,7 +35,6 @@ def split_sentence(document):
             j += 1
         elif document[i] not in SENTENCE_ENDING and document[j] not in SENTENCE_ENDING:
             j += 1
-    return sentences
 
 
 def split_word(sentence):
@@ -48,13 +44,13 @@ def split_word(sentence):
     :return: list of string
     """
     check_string(sentence)
-    words = []
     i = 0
     j = 1
+    word_list = []
     length = len(sentence)
     while j != length:
         if sentence[i].isalpha() and not sentence[j].isalpha():
-            words.append(sentence[i:j])
+            word_list.append(sentence[i:j])
             i = j
             j = i + 1
         elif sentence[i].isalpha() and sentence[j].isalpha():
@@ -63,9 +59,9 @@ def split_word(sentence):
             i = j
             j += 1
     if sentence[i:j].isalpha():
-        words.append(sentence[i:j])
+        word_list.append(sentence[i:j])
 
-    return words
+    return word_list
 
 
 def check_string(filename):
@@ -144,7 +140,7 @@ def split_document_to_table(document):
     return word_lists
 
 
-def split_word_and_add(query_table, document):
+def build_table(query_table, document):
     """
     split document into words and add to query_table.
     :param document: string
@@ -184,25 +180,6 @@ def query_word_in_sentence(sentence, word):
             break
 
 
-def main():
-    args = sys.argv
-    if len(args) < 3:
-        return 0
-    document_filename = args[1]
-    query_filename = args[2]
-    document = read_document(document_filename)
-
-    for query in read_query(query_filename):
-        table = split_document_to_table_generator(document)
-        occ = query_word_in_table(table, query)
-        if not len(occ):
-            print('None')
-        else:
-            print(','.join(occ))
-
-    return 0
-
-
 def query_table_test():
     args = sys.argv
     if len(args) < 3:
@@ -213,44 +190,14 @@ def query_table_test():
     document = read_document(document_filename)
 
     qt = querytable.QueryTable()
-    split_word_and_add(qt, document)
+    build_table(qt, document)
     for query in read_query(query_filename):
         print(query, qt.query(query))
 
+    print('collision per add: {cpa}'.format(cpa=qt.collision_per_add))
+    print('collision per query: {cpq}'.format(cpq=qt.collision_per_query))
+    print('the length of query table: {len}'.format(len=qt.TableSize))
+    print('load factor: {lf}'.format(lf=qt.load_factor))
+
 if __name__ == '__main__':
-
-#     document = """
-#     Five years ago, you had to have a couple of Michelin stars, your own TV show, or have concocted the next big food trend to earn a publishing deal that launched your new cookbook.
-# Now it's all about your followers on social media.
-# Thirteen-year-old Californian food blogger Chase Bailey - who has autism - has just written his first cookbook after gaining more than 200,000 views for his YouTube page, Chase 'N Yur Face.
-# His weekly posts see him cooking new recipes, working with established chefs and teaching his thousands of subscribers to cook soups and macaroni cheese dishes.
-# "Food influencers like Chase have definitely changed how we look for new authors," Chase's publisher, James Fraioli of Culinary Book Creations, tells the BBC."""
-
-    # sentences = split_sentence(document)
-    # print('\n'.join(sentences))
-    # print(len(sentences))
-    # sys.exit(main(sys.argv[1:]))
-
-    # query_list = []
-    # query_list = read_query('query.txt')
-    # print('\n'.join(map(lambda s: '"' + s + '"', query_list)))
-
-    # word_list = ['on', 'social', 'media', 'social']
-    # word = 'social'
-    # print(query_word(word_list, word))
-    # print(query_word(word_list, 'hello'))
-
-    # print(' '.join(query_word_in_document(document, 'have')))
-    # profile.run("main()")
-    # main()
-    # print(query_word_in_list(['a', 'b', 'hel', 'fuc', 'b', 'hel', 'fuc', 'e','e'], ''))
-    # for word_list in split_document_to_table(document):
-    #     print(word_list)
-    # table = split_document_to_table(document)
-    # print(query_word_in_table(table, 'have'))
-
-    # query_table = querytable.QueryTable()
-    # split_word_and_add(query_table, document)
-    # print('Five', query_table.query('Five'))
-
     query_table_test()

@@ -15,14 +15,31 @@ class QueryTable(object):
     query table is data structure to store word and its position in a document.
     """
     # TableSize value maybe change in method enlarge, is a prime that greater than 100,000
-    TableSize = 200609
-    LOAD_FACTOR_LIMIT = 0.99
+    TableSize = 10007
+    LOAD_FACTOR_LIMIT = 0.9
 
     def __init__(self):
         object.__init__(self)
 
         self._table = [None] * QueryTable.TableSize
         self._size = 0
+
+        self._total_add_count = 0
+        self._total_query_count = 0
+        self._add_collision_count = 0
+        self._query_collision_count = 0
+
+    @property
+    def collision_per_add(self):
+        return self._add_collision_count / self._total_add_count
+
+    @property
+    def collision_per_query(self):
+        return self._query_collision_count / self._total_query_count
+
+    @property
+    def load_factor(self):
+        return self._size / QueryTable.TableSize
 
     @staticmethod
     def hash(word):
@@ -48,6 +65,7 @@ class QueryTable(object):
         if not isinstance(word, str):
             raise TypeError('Type error: word')
 
+        self._total_add_count += 1
         if self.size > QueryTable.LOAD_FACTOR_LIMIT * QueryTable.TableSize:
             self.enlarge()
 
@@ -62,6 +80,7 @@ class QueryTable(object):
                 break
             else:
                 hash_value += 1
+                self._add_collision_count += 1
 
     def enlarge(self):
         QueryTable.TableSize = QueryTable.TableSize * 2 + 1
@@ -88,12 +107,14 @@ class QueryTable(object):
         if not isinstance(word, str):
             raise TypeError('Type error: word')
 
+        self._total_query_count += 1
         hash_value = self.hash(word)
         while self._table[hash_value] is not None:
             if self._table[hash_value][0] == word:
                 return self._table[hash_value][1]
             else:
                 hash_value += 1
+                self._query_collision_count += 1
         return None
 
 
